@@ -1,0 +1,190 @@
+<?php
+
+/**
+ * Implements hook_hook().
+ */
+function superman_cv_menu() {
+  $items['superma-cv'] = array(
+    'title' => 'Superman-CV',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('superman_cv_page_form'),
+	'menu_name' => 'main-menu',
+	'access callback' => TRUE,
+	'type' => MENU_NORMAL_ITEM,
+   );
+  return $items;
+}
+
+/**
+ * Implements superman_cv_page_form().
+ */
+function superman_cv_page_form($form, &$form_state){
+  $form['title'] = array(
+    '#type' => 'textfield', 
+    '#title' => t('Имя'),  
+    '#size' => 60, 
+    '#maxlength' => 128, 
+    '#required' => TRUE,
+	'#attributes' =>array('placeholder' => t('Имя')),
+  );
+  
+  $form['email'] = array(
+    '#type' => 'textfield', 
+    '#title' => t('E-mail'),  
+    '#size' => 60, 
+    '#maxlength' => 128, 
+    '#required' => TRUE,
+	'#attributes' =>array('placeholder' => t('E-mail')),
+	'#element_validate' => array('superman_cv_email_element_validate'),
+  );
+  
+  $years = array(
+    '0' => '1998',
+    '1' => '1997',
+    '2' => '1996',
+    '3' => '1995',
+    '4' => '1994',
+    '5' => '1993',
+    '6' => '1992',
+    '7' => '1991',
+    '8' => '1990',
+    '9' => '1989',
+	'10' => '1988',
+	'11' => '1987',
+	'12' => '1986',
+	'13' => '1985',
+	'14' => '1984',
+	'15' => '1983',
+	'16' => '1982',
+	'17' => '1981',
+	'18' => '1980',
+  );
+  
+  $form['birthday'] = array(
+       '#type' => 'select',
+       '#title' => t('Год рождения'),
+       '#options' => $years,
+       '#default_value' => 'DD',
+       '#description' => t('Выберите год рождения.'),
+   );
+   
+   $gender_value = array(0 => t('Мжской'), 1 => t('Женский'));
+   
+   $form['gender'] = array(
+    '#type' => 'radios',
+    '#title' => t('Пол'),
+    '#default_value' => $gender_value[0],
+    '#options' => $gender_value,
+    '#description' => t('Выберите пол.'),
+  );
+  
+  $extremity = array(
+    '0' => '0',
+    '1' => '1',
+    '2' => '2',
+    '3' => '3',
+    '4' => '4',
+    '5' => '5',
+    '6' => '6',
+    '7' => '7',
+    '8' => '8',
+    '9' => '9',
+	'10' => '10 и более',
+  );
+  $form['nr_of_extremity'] = array(
+    '#type' => 'radios',
+    '#title' => t('Количество конечностей'),
+    '#default_value' => $extremity[10],
+    '#options' => $extremity,
+    '#description' => t('Выберите количество конечностей.'),
+  );
+  
+  $supernormal = array(
+   '0' => 'бесмертие',
+   '1' => 'прохождение сквозь стены',
+   '2' => 'левитация',
+  );
+  
+  $forDroplist = "";
+  
+  foreach ($supernormal as $item){
+	  
+	  $forDroplist[$item] = $item;
+  }
+  
+  $form['supernormal'] = array(
+    '#type' => 'select',
+    '#title' => 'Cверхспособность',
+    '#default_value' => '',
+    '#options' => $forDroplist,
+    '#description' => 'Выберите сверхспособность.',
+    '#multiple' => TRUE, 
+    '#size' => 3,
+  );
+  
+  $form['about'] = array(
+    '#type' => 'textarea', 
+    '#title' => t('Биография'), 
+    '#default_value' => '', 
+    '#size' => 60,  
+    '#required' => TRUE,
+  );
+  
+  $form['agree'] = array(
+    '#type' => 'checkbox', 
+    '#title' => t('С контрактом ознакомлен.'),
+  );
+  
+  
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Отправить'),
+	'#submit' => array('superman_cv_page_submit'),
+  );
+   
+  return $form;
+}
+
+/**
+ * Implements superman_cv_email_element_validate().
+ */
+function superman_cv_email_element_validate ($element, &$form_state, $form) {
+  if (!valid_email_address($element['#value'])) {
+    form_error($element, t('Please enter a valid email address.'));
+  }
+}
+
+/**
+ * Implements superman_cv_page_submit().
+ */
+function superman_cv_page_submit($form, &$form_state) {
+  $cv_supernormal = '';
+  $size = count($form_state['values']['supernormal']);
+	
+  foreach($form_state['values']['supernormal'] as $x) {
+    $cv_supernormal .= $x . ', ';
+  }
+  
+  $cv_name = $form_state['values']['title'];
+  $cv_email = $form_state['values']['email'];
+  $cv_about = $form_state['values']['about'];
+  $cv_nr_of_extremity = $form['nr_of_extremity']['#options'][$form_state['values']['nr_of_extremity']];
+  $cv_gender = $form['gender']['#options'][$form_state['values']['gender']];
+  $cv_birthday = $form['birthday']['#options'][$form_state['values']['birthday']];
+  $site_name = variable_get('site_name', '');
+  $params = array();
+  $params['subject'] = t('Новое CV на !sitename', array('!sitename' => $site_name));
+  $params['body'] = t('Имя: ' . $cv_name . '<br />E-mail: ' . $cv_email . '<br /> Год рождения: ' . $cv_birthday .'<br /> Пол: ' . $cv_gender . '<br /> Количество конечностей: ' . $cv_nr_of_extremity .'<br /> Cверхспособность: ' . $cv_supernormal . '<br /> Биография: ' . $cv_about);
+  drupal_mail('superman_cv', 'send_cv', 'veaceslav@cts.md', language_default(), $params);
+  watchdog('superman_cv', '|' . $params['subject'] . '| Sender: ' . $cv_name);
+}
+ 
+/**
+ * Implements hook_mail().
+ */
+function superman_cv_mail($key, &$message, $params) {
+  if ($key == 'send_cv') {
+    $message['subject'] = $params['subject'];
+    $message['body'][] = $params['body'];
+  }
+}

@@ -1,0 +1,5 @@
+name = Superman CV
+description = Show a webform for apply to SUPERMAN position.
+package = INITLAB
+version = 1.0-dev
+core = 7.x
